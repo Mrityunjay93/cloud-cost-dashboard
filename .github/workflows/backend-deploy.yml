@@ -1,0 +1,122 @@
+name: Backend Deploy (ECS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "backend/**"
+      - "docker/Dockerfile.backend"
+      - ".github/workflows/backend-deploy.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+      ECS_TASK_FAMILY: ${{ secrets.ECS_TASK_FAMILY }}
+      ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+      ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
+      ECS_LOG_GROUP: ${{ secrets.ECS_LOG_GROUP }}
+      CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_SSL: ${{ secrets.DB_SSL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -f docker/Dockerfile.backend -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Generate ECS task definition
+        run: |
+          cat > task-definition.json <<EOF
+          {
+            "family": "$ECS_TASK_FAMILY",
+            "networkMode": "awsvpc",
+            "requiresCompatibilities": ["FARGATE"],
+            "cpu": "256",
+            "memory": "512",
+            "executionRoleArn": "$ECS_EXECUTION_ROLE_ARN",
+            "taskRoleArn": "$ECS_TASK_ROLE_ARN",
+            "containerDefinitions": [
+              {
+                "name": "backend-api",
+                "image": "IMAGE_PLACEHOLDER",
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 5000,
+                    "hostPort": 5000,
+                    "protocol": "tcp"
+                  }
+                ],
+                "environment": [
+                  { "name": "PORT", "value": "5000" },
+                  { "name": "CORS_ORIGIN", "value": "$CORS_ORIGIN" },
+                  { "name": "DB_HOST", "value": "$DB_HOST" },
+                  { "name": "DB_PORT", "value": "$DB_PORT" },
+                  { "name": "DB_USER", "value": "$DB_USER" },
+                  { "name": "DB_PASSWORD", "value": "$DB_PASSWORD" },
+                  { "name": "DB_NAME", "value": "$DB_NAME" },
+                  { "name": "DB_SSL", "value": "$DB_SSL" },
+                  { "name": "JWT_SECRET", "value": "$JWT_SECRET" }
+                ],
+                "logConfiguration": {
+                  "logDriver": "awslogs",
+                  "options": {
+                    "awslogs-group": "$ECS_LOG_GROUP",
+                    "awslogs-region": "$AWS_REGION",
+                    "awslogs-stream-prefix": "ecs"
+                  }
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Fill image in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: backend-api
+          image: ${{ steps.image.outputs.image }}
+
+      - name: Deploy ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
