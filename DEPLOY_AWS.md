@@ -36,7 +36,32 @@ App URLs:
 
 Create an IAM role for GitHub Actions with trust policy for:
 - `token.actions.githubusercontent.com`
-- Your repo (`repo:<org>/<repo>:ref:refs/heads/main`)
+- Your repo (`repo:Mrityunjay93/cloud-cost-dashboard:ref:refs/heads/main`)
+
+Sample trust policy (replace `<AWS_ACCOUNT_ID>`):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:Mrityunjay93/cloud-cost-dashboard:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}
+```
 
 Attach permissions for:
 - ECR push/pull
