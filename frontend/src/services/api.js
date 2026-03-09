@@ -1,8 +1,12 @@
 import axios from "axios";
 import { clearSession, getToken } from "./auth";
 
+const defaultProdApiUrl = "https://cloud-cost-monitor-env.eba-uepuh5dy.ap-south-1.elasticbeanstalk.com/api";
+const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const apiBaseUrl = process.env.REACT_APP_API_URL || (isLocalHost ? "http://localhost:5000/api" : defaultProdApiUrl);
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api"
+  baseURL: apiBaseUrl
 });
 
 API.interceptors.request.use((req) => {

@@ -2,6 +2,14 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Environment setup
+
+API calls use `REACT_APP_API_URL`.
+
+- Local development: copy `.env.example` to `.env` and set your local backend URL.
+- Production (Amplify): set `REACT_APP_API_URL` in Amplify environment variables.
+- Example production value is in `.env.production.example`.
+
 ## Available Scripts
 
 In the project directory, you can run:

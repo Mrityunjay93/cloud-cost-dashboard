@@ -10,14 +10,18 @@ const resourceRoutes = require("./routes/resourceRoutes");
 
 const app = express();
 
+const normalizeOrigin = (value = "") => value.trim().replace(/\/+$/, "");
+
 const allowedOrigins = (process.env.CORS_ORIGIN || "*")
   .split(",")
-  .map((origin) => origin.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin ? normalizeOrigin(origin) : "";
+
+    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
       return;
     }
