@@ -48,7 +48,7 @@ function Dashboard(){
       setSelectedProjectId(String(initialProjectId));
       setActiveProjectId(initialProjectId);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to load projects");
+      setMessage(err.response?.data?.message || err.response?.data?.error || "Failed to load projects");
       setLoading(false);
     }
   };
@@ -62,7 +62,7 @@ function Dashboard(){
       setResources(res.data);
     }catch(err){
       setResources([]);
-      setMessage(err.response?.data?.message || "Failed to load resources");
+      setMessage(err.response?.data?.message || err.response?.data?.error || "Failed to load resources");
     } finally {
       setLoading(false);
     }

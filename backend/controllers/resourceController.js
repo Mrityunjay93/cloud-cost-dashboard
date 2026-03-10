@@ -43,7 +43,8 @@ exports.create = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({ error: error.message });
+    console.error("create resource error:", error);
+    res.status(500).json({ message: "Internal server error" });
 
   }
 
@@ -72,7 +73,8 @@ exports.list = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({ error: error.message });
+    console.error("list resources error:", error);
+    res.status(500).json({ message: "Internal server error" });
 
   }
 

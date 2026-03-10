@@ -10,6 +10,10 @@ const resourceRoutes = require("./routes/resourceRoutes");
 
 const app = express();
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set");
+}
+
 const normalizeOrigin = (value = "") => value.trim().replace(/\/+$/, "");
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "*")
@@ -54,6 +58,6 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-pool.connect()
+pool.query("SELECT 1")
   .then(() => console.log("Database connected"))
   .catch(err => console.error("DB connection error:", err));

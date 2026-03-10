@@ -33,7 +33,7 @@ function Projects(){
       setSelectedProjectId(String(defaultId));
       setActiveProjectId(defaultId);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to load projects");
+      setMessage(err.response?.data?.message || err.response?.data?.error || "Failed to load projects");
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ function Projects(){
       setMessage("Project created");
       fetchProjects();
     } catch (err) {
-      setMessage(err.response?.data?.message || "Unable to create project");
+      setMessage(err.response?.data?.message || err.response?.data?.error || "Unable to create project");
     } finally {
       setCreating(false);
     }

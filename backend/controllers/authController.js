@@ -49,7 +49,8 @@ exports.register = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({ error: error.message });
+    console.error("register error:", error);
+    res.status(500).json({ message: "Internal server error" });
 
   }
 
@@ -96,7 +97,8 @@ exports.login = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({ error: error.message });
+    console.error("login error:", error);
+    res.status(500).json({ message: "Internal server error" });
 
   }
 

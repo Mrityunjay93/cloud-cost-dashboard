@@ -39,7 +39,7 @@ function Login() {
       navigate("/dashboard");
 
     } catch (err) {
-      const apiMessage = err.response?.data?.message;
+      const apiMessage = err.response?.data?.message || err.response?.data?.error;
       setErrorMessage(apiMessage || "Authentication failed");
     } finally {
       setLoading(false);
